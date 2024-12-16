@@ -1,4 +1,4 @@
-# <h1 align="center"> Forge Template </h1>
+# <h1 align="center"> SnakeFi - Decentralize Exchange incentive Ve(3,3) </h1>
 
 **Template repository for getting started quickly with Foundry projects**
 
@@ -9,6 +9,7 @@
 Click "Use this template" on [GitHub](https://github.com/foundry-rs/forge-template) to create a new repository with this repo as the initial state.
 
 Or, if your repo already exists, run:
+
 ```sh
 forge init
 forge build

@@ -56,12 +56,12 @@ contract SnakeFactory is ISnakeFactory {
     function setTank(address _tank) external {
         require(msg.sender == deployer, "No permission");
         require(tank == address(0), "Already Initialized");
-        team = _team;
+        tank = _tank;
     }
 
-    function setPause(bool _pause) external {
+    function setPause(bool _isPaused) external {
         require(msg.sender == pauser, "No permission");
-        pause = _pause;
+        isPaused = _isPaused;
     }
     
     function setFeeSetter(address _feeSetter) external {

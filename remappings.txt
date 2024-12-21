@@ -1,4 +1,4 @@
-ds-test/=lib/ds-test/src/
+# ds-test/=lib/ds-test/src/
 @openzeppelin/=lib/openzeppelin-contracts/
 @forge-std/=lib/forge-std/src/
 @solady/=lib/solady/src/

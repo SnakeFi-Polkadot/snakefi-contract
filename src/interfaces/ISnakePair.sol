@@ -2,32 +2,64 @@
 pragma solidity 0.8.20;
 
 interface ISnakePair {
-    function claimFees() external returns(uint256, uint256);
+    function claimFees() external returns (uint256, uint256);
 
-    function tokens() external view returns(address, address);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 
-    function transferFrom(address from, address to, uint256 amount) external returns(bool);
-
-    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, uint8 r, bytes32 s) external;
+    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external;
 
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
 
-    function mint(address receiver, uint256 amount) external returns(uint256 lpAmount);
+    function mint(address receiver, uint256 amount) external returns (uint256 lpAmount);
 
-    function burn(address burner, uint256 amount) external returns(uint256 amount0, uint256 amount1);
+    function burn(address burner, uint256 amount) external returns (uint256 amount0, uint256 amount1);
 
     /* ----------------------------- VIEW FUNCTIONS ----------------------------- */
-    function metadata() external view returns (
-        uint256 decimal0,
-        uint256 decimal1,
-        uint256 reserve0,
-        uint256 reserve1,
-        bool stable,
-        address token0,
-        address token1
-    );
+    function metadata()
+        external
+        view
+        returns (
+            uint256 decimal0,
+            uint256 decimal1,
+            uint256 reserve0,
+            uint256 reserve1,
+            bool stable,
+            address token0,
+            address token1
+        );
 
-    function getReserves() external view returns (uint256 reserve0, uint256 reserve1);
+    // function externalBribe() external view returns(address);
 
-    function getAmountOut(uint256 amountIn, address tokenIn) external view returns(uint256 amountOut);
+    // function voter() external view returns(address);
+
+    function factory() external view returns (address);
+
+    function fees() external view returns (address);
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+
+    function tokens() external view returns (address, address);
+
+    function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256 amountOut);
+
+    function name() external view returns (string memory);
+
+    function symbol() external view returns (string memory);
+
+    function totalSupply() external view returns (uint256);
+
+    function decimals() external view returns (uint8);
+
+    function claimable0(address _user) external view returns (uint256);
+
+    function claimable1(address _user) external view returns (uint256);
+
+    function stable() external view returns (bool);
+
+    function balanceOf(address _user) external view returns (uint256);
+
+    function allowance(address _owner, address _spender) external view returns (uint256);
 }

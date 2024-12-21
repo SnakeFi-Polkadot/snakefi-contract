@@ -27,3 +27,11 @@ dictionary_weight = 80
 include_storage = true
 include_push_bytes = true
 shrink_run_limit = 5000
+
+[rpc_endpoints]
+moonbase = "https://rpc.api.moonbase.moonbeam.network"
+moonbeam = "INSERT_RPC_API_ENDPOINT"
+
+[etherscan]
+moonbase = { key = "${MOONSCAN_API_KEY}" }
+moonbeam = { key = "${MOONSCAN_API_KEY}" }

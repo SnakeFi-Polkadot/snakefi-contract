@@ -3,9 +3,9 @@ pragma solidity 0.8.20;
 
 import {IERC20Metadata} from "./interfaces/IERC20Metadata.sol";
 
-import {ISnakeStableCoin} from "./interfaces/ISnakeStableCoin.sol";
+import {ISnakeStablecoin} from "./interfaces/ISnakeStablecoin.sol";
 
-contract SnakeStablecoin is ISnakeStableCoin, IERC20Metadata {
+contract SnakeStablecoin is ISnakeStablecoin, IERC20Metadata {
     string public constant override name = "SNAKE_FINANCE STABLECOIN";
     string public constant override symbol = "SAE";
     uint8 public constant override decimals = 18;

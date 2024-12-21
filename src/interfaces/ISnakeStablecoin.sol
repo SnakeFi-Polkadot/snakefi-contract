@@ -1,7 +1,7 @@
 // SPDX-Identifier-License: MIT
 pragma solidity 0.8.20;
 
-interface ISnakeStableCoin {
+interface ISnakeStablecoin {
     function setMinter(address _minter) external;
 
     function mint(address receiver) external;

@@ -5,10 +5,6 @@ import {ISnakeFactory} from "../interfaces/ISnakeFactory.sol";
 import {SnakePair} from "./SnakePair.sol";
 
 contract SnakeFactory is ISnakeFactory {
-    /// @notice MAX_REDUCED_REFERRAL_FEE is used to reduce the trading fee for the referral program
-    /// @return Documents the return variables of a contract’s function state variable
-    uint256 public constant MAX_REDUCED_REFERRAL_FEE = 1000; // 10%
-
     /// @notice MAX_REFERRAL_FEE is the maximum referral fee for each trader in the referral system that can be set for the referral program
     /// @return Documents the return variables of a contract’s function state variable
     uint256 public constant MAX_REFERRAL_FEE = 1200; // 12%
@@ -17,6 +13,7 @@ contract SnakeFactory is ISnakeFactory {
 
     uint256 public stableFee;
     uint256 public volatileFee;
+
     uint256 public stakingNFTFee;
 
     bool public isPaused;
@@ -34,7 +31,7 @@ contract SnakeFactory is ISnakeFactory {
     address public team; // Team wallet could be multisig or distinct with the deployer
     address public immutable deployer; // This deployer address could be same as the feeSetter
 
-    /* ------------------- token0 -> token1 -> stable -> pair ------------------- */
+    /* ------------------- token0 -> token1 -> snake -> pair ------------------- */
     mapping(address => mapping(address => mapping(bool => address))) public override getPair;
     mapping(address => bool) public override isPair;
     address[] public allPairs;
@@ -45,7 +42,7 @@ contract SnakeFactory is ISnakeFactory {
     bool internal _stable;
 
     /* ---------------------------------- EVENT --------------------------------- */
-    event PairCreated(address indexed token0, address indexed token1, bool stable, address pair, uint256);
+    event PairCreated(address indexed token0, address indexed token1, bool snake, address pair, uint256);
 
     constructor() {
         pauser = msg.sender;
@@ -53,6 +50,7 @@ contract SnakeFactory is ISnakeFactory {
         feeSetter = msg.sender;
         stableFee = 2; // 0.02%
         volatileFee = 20; // 0.2%
+        // snakeFee = 20; // 0.2%
         stakingNFTFee = 1000; // 10% of stable / volatile fee
         deployer = msg.sender;
     }

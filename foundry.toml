@@ -6,7 +6,7 @@ src = 'src'
 test = 'test'
 script = 'script'
 remappings = []
-auto_detect_solc = true
+solc_version = "0.8.20"
 optimizer = true
 optimizer_runs = 200
 
@@ -29,9 +29,6 @@ include_push_bytes = true
 shrink_run_limit = 5000
 
 [rpc_endpoints]
-moonbase = "https://rpc.api.moonbase.moonbeam.network"
-moonbeam = "INSERT_RPC_API_ENDPOINT"
+westend_asset_hub = "https://westend-asset-hub-eth-rpc.polkadot.io"
 
 [etherscan]
-moonbase = { key = "${MOONSCAN_API_KEY}" }
-moonbeam = { key = "${MOONSCAN_API_KEY}" }

@@ -11,7 +11,7 @@ import {ISnakePairCallee} from "../interfaces/ISnakePairCallee.sol";
 import {SnakeFactory} from "./SnakeFactory.sol";
 import {SnakePairFees} from "./SnakePairFees.sol";
 
-contract SnakePair is ISnakePair {
+contract SnakePair {
     using FixedPointMathLib for uint256;
 
     struct Observation {
@@ -20,14 +20,10 @@ contract SnakePair is ISnakePair {
         uint256 reserve1Cumulative;
     }
 
-    string public override name;
-    string public override symbol;
+    string public name;
+    string public symbol;
 
-    uint8 public constant override decimals = 18;
-
-    // This is used to determine if the pair is stable or volatile.
-    // For example, USDT/USDC would be stable, while ETH/USDT would be volatile
-    bool public immutable override stable;
+    uint8 public constant  decimals = 18;
 
     bytes32 internal DOMAIN_SEPARATOR;
     // keccak256(Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline))
@@ -36,16 +32,17 @@ contract SnakePair is ISnakePair {
 
     uint256 internal constant MINIMUM_LIQUIDITY = 10 ** 3;
 
-    uint256 public override totalSupply = 0;
-    mapping(address => mapping(address => uint256)) public override allowance;
-    mapping(address => uint256) public override balanceOf;
+    uint256 public  totalSupply = 0;
+    mapping(address => mapping(address => uint256)) public  allowance;
+    mapping(address => uint256) public  balanceOf;
 
-    address public immutable override token0;
-    address public immutable override token1;
-    address public immutable override fees; // Address to receive trading fees
-    address public immutable override factory;
+    address public immutable  token0;
+    address public immutable  token1;
+    address public immutable  fees; // Address to receive trading fees
+    address public immutable  factory;
 
-    // bool public hasGauge;
+    // bool public immutable  erc404;
+    bool public immutable  stable;
 
     // Reading from the oracles every 30 minutes
     uint32 constant periodSize = 1800;
@@ -72,8 +69,8 @@ contract SnakePair is ISnakePair {
     mapping(address => uint256) public supplyIndex1;
 
     // tracks the amount of unclaimed tokens, but claimable tokens off of fees for token0 and token1
-    mapping(address => uint256) public override claimable0;
-    mapping(address => uint256) public override claimable1;
+    mapping(address => uint256) public  claimable0;
+    mapping(address => uint256) public  claimable1;
 
     /* -------------------------------------------------------------------------- */
     /*                                   EVENTS                                   */
@@ -146,7 +143,7 @@ contract SnakePair is ISnakePair {
     }
 
     /// @notice Claim the accumulated fees but unclaimed
-    function claimFees() external override returns (uint256 claimed0, uint256 claimed1) {
+    function claimFees() external  returns (uint256 claimed0, uint256 claimed1) {
         address sender = msg.sender;
         _updateFor(sender);
 
@@ -173,7 +170,7 @@ contract SnakePair is ISnakePair {
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 amount) external override returns (bool) {
+    function transferFrom(address from, address to, uint256 amount) external  returns (bool) {
         address spender = msg.sender;
         uint256 spenderAllowance = allowance[from][spender];
 
@@ -188,10 +185,15 @@ contract SnakePair is ISnakePair {
         return true;
     }
 
-    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
-        external
-        override
-    {
+    function permit(
+        address owner, 
+        address spender, 
+        uint256 amount, 
+        uint256 deadline, 
+        uint8 v, 
+        bytes32 r, 
+        bytes32 s
+    ) external {
         require(deadline >= block.timestamp, "SnakePair: PERMIT_EXPIRED");
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
@@ -217,7 +219,7 @@ contract SnakePair is ISnakePair {
         emit Approval(owner, spender, amount);
     }
 
-    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external override lock {
+    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external  lock {
         require(!SnakeFactory(factory).isPaused());
         require(amount0Out > 0 || amount1Out > 0, "IOA"); // Pair: INSUFFICIENT_OUTPUT_AMOUNT
         (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
@@ -255,9 +257,28 @@ contract SnakePair is ISnakePair {
         emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
     }
 
-    function mint(address receiver, uint256 amount) external override returns (uint256 lpAmount) {}
+    function mint(address receiver) external lock returns (uint256 liquidity) {
+        (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
+        uint256 _balance0 = IERC20(token0).balanceOf(address(this));
+        uint256 _balance1 = IERC20(token1).balanceOf(address(this));
+        uint256 _amount0 = _balance0 - _reserve0;
+        uint256 _amount1 = _balance1 - _reserve1;
 
-    function burn(address burner, uint256 amount) external override returns (uint256 amount0, uint256 amount1) {}
+        uint256 _totalSupply = totalSupply; // gas savings, must be defined here since totalSupply can update in _mintFee
+        if (_totalSupply == 0) {
+            liquidity = FixedPointMathLib.sqrt(_amount0 * _amount1) - MINIMUM_LIQUIDITY;
+            _mint(address(0), MINIMUM_LIQUIDITY); // permanently lock the first MINIMUM_LIQUIDITY tokens
+        } else {
+            liquidity = FixedPointMathLib.min((_amount0 * _totalSupply) / _reserve0, (_amount1 * _totalSupply) / _reserve1);
+        }
+        require(liquidity > 0, "ILM"); // Pair: INSUFFICIENT_LIQUIDITY_MINTED
+        _mint(receiver, liquidity);
+
+        _update(_balance0, _balance1, _reserve0, _reserve1);
+        emit Mint(msg.sender, _amount0, _amount1);
+    }
+
+    function burn(address burner, uint256 amount) external lock returns (uint256 amount0, uint256 amount1) {}
 
     // force balances to match reserves
     function skim(address to) external lock {
@@ -286,7 +307,7 @@ contract SnakePair is ISnakePair {
     function metadata()
         external
         view
-        override
+        
         returns (
             uint256 _decimal0,
             uint256 _decimal1,
@@ -300,7 +321,7 @@ contract SnakePair is ISnakePair {
         return (decimal0, decimal1, reserve0, reserve1, stable, token0, token1);
     }
 
-    function tokens() external view override returns (address, address) {
+    function tokens() external view  returns (address, address) {
         return (token0, token1);
     }
 
@@ -340,7 +361,7 @@ contract SnakePair is ISnakePair {
         amountOut = _getAmountOut(amountIn, tokenIn, _reserve0, _reserve1);
     }
 
-    function getAmountOut(uint256 amountIn, address tokenIn) external view override returns (uint256 amountOut) {
+    function getAmountOut(uint256 amountIn, address tokenIn) external view  returns (uint256 amountOut) {
         (uint256 _reserve0, uint256 _reserve1) = (reserve0, reserve1);
         amountIn -= amountIn * SnakeFactory(factory).getFee(stable) / 10000; // remove fee from amount received
         return _getAmountOut(amountIn, tokenIn, _reserve0, _reserve1);

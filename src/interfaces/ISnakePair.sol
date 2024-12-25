@@ -11,9 +11,9 @@ interface ISnakePair {
 
     function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
 
-    function mint(address receiver, uint256 amount) external returns (uint256 lpAmount);
+    function mint(address receiver) external returns (uint256 lpAmount);
 
-    function burn(address burner, uint256 amount) external returns (uint256 amount0, uint256 amount1);
+    function burn(address burner) external returns (uint256 amount0, uint256 amount1);
 
     /* ----------------------------- VIEW FUNCTIONS ----------------------------- */
     function metadata()
@@ -62,4 +62,6 @@ interface ISnakePair {
     function balanceOf(address _user) external view returns (uint256);
 
     function allowance(address _owner, address _spender) external view returns (uint256);
+
+    function getReserves() external view returns (uint256, uint256, uint256);
 }

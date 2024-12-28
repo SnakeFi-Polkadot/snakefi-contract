@@ -1,108 +1,120 @@
-// // SPDX-Identifier-License: MIT
-// pragma solidity 0.8.20;
+// SPDX-Identifier-License: MIT
+pragma solidity 0.8.20;
 
-// import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-// import {IERC20Metadata} from "./interfaces/IERC20Metadata.sol";
-// import {ISnake} from "./interfaces/ISnake.sol";
-// import {IERC404Operator} from "./interfaces/IERC404Operator.sol";
-// import {ERC721Receiver} from "./ERC721Receiver.sol";
+contract Snake is Ownable {
+    string public constant name = "S_N_A_K_E";
+    string public constant symbol = "SNAKE";
 
-// contract Snake is ISnake, IERC20Metadata, ERC721Receiver {
+    uint8 public constant decimals = 18;
+    uint256 public totalSupply = 0;
 
-//     string public override name;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
 
-//     string public override symbol;
+    bool public initialMinted;
+    address public minter;
+    address public redemptionReceiver;
+    address public merkleClaim;
 
-//     uint8 public immutable override decimals;
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
-//     uint256 public immutable override totalSupply;
+    constructor(address _owner) Ownable(_owner) {
+        _mint(msg.sender, 0);
+    }
 
-//     mapping(address => uint256) public override balanceOf;
+    /* -------------------------------------------------------------------------- */
+    /*                             EXTERNAL FUNCTIONS                             */
+    /* -------------------------------------------------------------------------- */
 
-//     mapping(address => mapping(address => uint256)) public override allowance;
+    // No checks as its meant to be once off to set minting rights to BaseV1 Minter
+    function setMinter(address _minter) external {
+        require(msg.sender == minter);
+        minter = _minter;
+    }
 
-//     mapping(uint256 => address) public override getApproved;
+    function setRedemptionReceiver(address _receiver) external {
+        require(msg.sender == minter);
+        redemptionReceiver = _receiver;
+    }
 
-//     mapping(address => mapping(address => bool)) public override isApprovedForAll;
+    function setMerkleClaim(address _merkleClaim) external {
+        require(msg.sender == minter);
+        merkleClaim = _merkleClaim;
+    }
 
-//     mapping(uint256 => address) internal _ownerOf;
+    // NFTs are minted from this amount as well now
+    function initialMint(address _recipient) external {
+        require(msg.sender == minter && !initialMinted);
+        initialMinted = true;
+        _mint(_recipient, 400 * 1e6 * 1e18); //#settings
+    }
 
-//     mapping(address => uint256[]) internal _owned;
+    function approve(address _spender, uint256 _value) external returns (bool) {
+        allowance[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
+        return true;
+    }
 
-//     mapping(uint256 => uint256) internal _ownedIndex;
+    function transfer(address _to, uint256 _value) external returns (bool) {
+        return _transfer(msg.sender, _to, _value);
+    }
 
-//     mapping(address => bool) public whitelist;
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) external returns (bool) {
+        uint256 allowed_from = allowance[_from][msg.sender];
+        if (allowed_from != type(uint256).max) {
+            allowance[_from][msg.sender] -= _value;
+        }
+        return _transfer(_from, _to, _value);
+    }
 
-//     IERC404Operator public operator;
+    function mint(address account, uint256 amount) external returns (bool) {
+        require(msg.sender == minter);
+        _mint(account, amount);
+        return true;
+    }
 
-//     address public router;
+    function claim(address account, uint256 amount) external returns (bool) {
+        require(msg.sender == redemptionReceiver || msg.sender == merkleClaim);
+        _mint(account, amount);
+        return true;
+    }
 
-//     address public factory;
+    /* ---------------------------- PUBLIC FUNCTIONS ---------------------------- */
 
-//     /* --------------------------------- EVENTS --------------------------------- */
-    
-//     event ERC20Transfer(address indexed from , address indexed to, uint256 amount);
+    /* -------------------------------------------------------------------------- */
+    /*                             INTERNAL FUNCTIONS                             */
+    /* -------------------------------------------------------------------------- */
 
-//     event Approval(address indexed owner, address indexed spender, uint256 amount);
+    function _mint(address _to, uint256 _amount) internal returns (bool) {
+        totalSupply += _amount;
+        unchecked {
+            balanceOf[_to] += _amount;
+        }
+        emit Transfer(address(0x0), _to, _amount);
+        return true;
+    }
 
-//     event Transfer(address indexed from, address indexed to, uint256 amount);
-
-//     event ERC721Transfer(address indexed from, address indexed to, uint256 id);
-
-//     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
-
-//     /* -------------------------------------------------------------------------- */
-//     /*                                   ERRORS                                   */
-//     /* -------------------------------------------------------------------------- */
-//     error NotFound();
-//     error AlreadyExists();
-//     error InvalidRecipient();
-//     error InvalidSender();
-//     error UnsafeRecipient();
-
-//     constructor(
-//         string memory _name,
-//         string memory _symbol,
-//         address _nft,
-//         address _router,
-//         address _factory;
-//     ) {
-//         name = _name;
-//         symbol = _symbol;
-//         nft = IERC721(_nft);
-//         router = _router;
-//         factory = _factory;
-//     }
-
-//     function snakeNFT(uint256 tokenId) external {
-//         require(!migrated[tokenId], "Already migrated");
-//         address sender = msg.sender;
-//         require(sender == nft.ownerOf(tokenId), "Not the owner of the NFT");
-
-//         // TODO: Mint token for nft owner;
-//     }
-
-//     /* -------------------------------------------------------------------------- */
-//     /*                             INTERNAL FUNCTIONS                             */
-//     /* -------------------------------------------------------------------------- */
-//     function _transfer(address from, address to, uint256 amount) internal returns (bool) {
-//         require(from != address(0), 'ERC20: transfer from the zero address');
-//         uint256 balanceBeforeSender = balanceOf[from];
-//         uint256 balanceBeforeReceiver = balanceOf[to];
-
-//         balanceOf[from] -= amount;
-
-//         unchecked {
-//             balanceOf[to] += amount;
-//         }
-
-//         if (operator.approveOperator(address(this), from)) {
-//             uint256 
-//         }
-//     }
-
-//     function _getUnit() internal view returns (uint256) {
-//         return 10 ** decimals();
-//     }
-// }
+    function _transfer(
+        address _from,
+        address _to,
+        uint256 _value
+    ) internal returns (bool) {
+        balanceOf[_from] -= _value;
+        unchecked {
+            balanceOf[_to] += _value;
+        }
+        emit Transfer(_from, _to, _value);
+        return true;
+    }
+}

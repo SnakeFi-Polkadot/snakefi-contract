@@ -1,12 +1,11 @@
 // SPDX-Identifier-License: MIT
 pragma solidity 0.8.20;
 
-import "@forge-std/Test.sol";
+import {Test, console} from "../lib/forge-std/src/Test.sol";
 
 import {WrappedWND} from "../src/dex/WrappedWND.sol";
 
 contract WrappedWNDTest is Test {
-
     WrappedWND public wrappedWND;
 
     address public owner = makeAddr("owner");
@@ -34,7 +33,7 @@ contract WrappedWNDTest is Test {
         vm.prank(user);
         wrappedWND.deposit{value: amount}();
         assertEq(wrappedWND.balanceOf(user), amount);
-        
+
         vm.prank(user);
         wrappedWND.withdraw(amount);
         assertEq(wrappedWND.balanceOf(user), 0);

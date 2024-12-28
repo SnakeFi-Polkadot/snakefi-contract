@@ -1,10 +1,9 @@
 // SPDX-Identifier-License: MIT
 pragma solidity 0.8.20;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, console} from "lib/forge-std/src/Test.sol";
 
 // import {Snake} from "../src/Snake.sol";
-
 abstract contract BaseTest is Test {
     uint256 public constant INITIAL_SUPPLY = 1000000 * 10 ** 18;
 
@@ -17,10 +16,10 @@ abstract contract BaseTest is Test {
     address[] public users;
 
     function setUp() public virtual {
-        moonbaseFork = vm.createFork('moonbase');
+        moonbaseFork = vm.createFork("moonbase");
         vm.selectFork(moonbaseFork);
 
-        owner = makeAddr("owner");
+        // owner = makeAddr("owner");
         // stablecoinMinter = makeAddr("stablecoinMinter");
 
         // snakeStablecoin = new SnakeStablecoin(stablecoinMinter);

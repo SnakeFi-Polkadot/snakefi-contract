@@ -13,7 +13,10 @@ interface IVotingEscrow {
     function team() external returns (address);
     function epoch() external view returns (uint);
     function point_history(uint loc) external view returns (Point memory);
-    function user_point_history(uint tokenId, uint loc) external view returns (Point memory);
+    function user_point_history(
+        uint tokenId,
+        uint loc
+    ) external view returns (Point memory);
     function user_point_epoch(uint tokenId) external view returns (uint);
 
     function ownerOf(uint) external view returns (address);

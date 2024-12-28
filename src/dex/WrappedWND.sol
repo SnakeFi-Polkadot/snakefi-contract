@@ -3,7 +3,7 @@ pragma solidity 0.8.20;
 
 contract WrappedWND {
 
-    uint8 public constant decimals = 12;
+    uint8 public constant decimals = 18;
 
     mapping(address => uint256) public balanceOf;
 
@@ -48,16 +48,14 @@ contract WrappedWND {
 
     function transfer(address _to, uint256 _amount) external returns (bool) {
         require(balanceOf[msg.sender] >= _amount, "WrappedWND: INSUFFICIENT_BALANCE");
-        _transfer(msg.sender, _to, _amount);
-        return true;
+        return _transfer(msg.sender, _to, _amount);
     }
 
     function transferFrom(address _from, address _to, uint256 _amount) external  returns(bool) {
         require(balanceOf[_from] >= _amount, "WrappedWND: INSUFFICIENT_BALANCE");
         require(allowance[_from][msg.sender] >= _amount, "WrappedWND: INSUFFICIENT_ALLOWANCE");
         allowance[_from][msg.sender] -= _amount;
-        _transfer(_from, _to, _amount);
-        return true;
+        return _transfer(_from, _to, _amount);
     }
 
     function _transfer(address _from, address _to, uint256 _amount) internal returns(bool) {

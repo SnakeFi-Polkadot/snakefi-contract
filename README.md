@@ -1,40 +1,17 @@
 # <h1 align="center"> SnakeFi - Decentralize Exchange incentive Ve(3,3) </h1>
 
-**Template repository for getting started quickly with Foundry projects**
+## Deployment
 
-![Github Actions](https://github.com/foundry-rs/forge-template/workflows/CI/badge.svg)
+The deployer address:
 
-## Getting Started
+    - EVM: `0x1cb3D844C968D30E80babe134B299BE2c66d899e`
 
-Click "Use this template" on [GitHub](https://github.com/foundry-rs/forge-template) to create a new repository with this repo as the initial state.
+    - Westend Asset Hub: `5CiLd61pypFCa8uDND1S6XihW6PNF8SSirnBns4BoHJ4JvmU`
 
-Or, if your repo already exists, run:
+This is the list of deployed contract, consists of:
 
-```sh
-forge init
-forge build
-forge test
-```
+    - WrappedWND contract:
 
-## Writing your first test
+        - EVM address: `0xb576972a36f18365ECE226C29b3564F4bf79CFaD`
 
-All you need is to `import forge-std/Test.sol` and then inherit it from your test contract. Forge-std's Test contract comes with a pre-instatiated [cheatcodes environment](https://book.getfoundry.sh/cheatcodes/), the `vm`. It also has support for [ds-test](https://book.getfoundry.sh/reference/ds-test.html)-style logs and assertions. Finally, it supports Hardhat's [console.log](https://github.com/brockelmore/forge-std/blob/master/src/console.sol). The logging functionalities require `-vvvv`.
-
-```solidity
-pragma solidity 0.8.10;
-
-import "forge-std/Test.sol";
-
-contract ContractTest is Test {
-    function testExample() public {
-        vm.roll(100);
-        console.log(1);
-        emit log("hi");
-        assertTrue(true);
-    }
-}
-```
-
-## Development
-
-This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
+        - Westend Asset Hub address: `5GAdkdRw3LSV27vjqs6rg5xzHNQVUwoR8EfHE7UVGG8s6bYG`

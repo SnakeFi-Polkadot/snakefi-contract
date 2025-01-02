@@ -2,6 +2,8 @@
 pragma solidity 0.8.20;
 
 interface IGauge {
+    function stake() external view returns (address);
+
     function notifyRewardAmount(address token, uint256 amount) external;
 
     function getReward(address account, address[] memory tokens) external;

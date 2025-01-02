@@ -201,7 +201,17 @@ contract Gauge is Ownable, ReentrancyGuard {
             "Not allowed to deposit with lock"
         );
         _deposit(account, amount, 0);
-        // if (block.timestamp >= lock)
+        if (block.timestamp >= lockEnd[account]) {
+            delete lockEnd[account];
+            delete balanceWithLock[account];
+        }
+        balanceWithLock[account] += amount;
+        uint256 currentLockEnd = lockEnd[account];
+        uint256 newLockEnd = block.timestamp + lockDuration;
+        if (currentLockEnd > newLockEnd) {
+            revert("The current lock end > new lock end");
+        }
+        lockEnd[account] = newLockEnd;
     }
 
     function depositAll(uint256 tokenId) external {

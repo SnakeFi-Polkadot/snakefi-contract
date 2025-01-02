@@ -33,7 +33,7 @@ contract ZodiacToken is ERC20, AccessControl {
     // @dev this address is used to receive the rewards
     address public rewardsAddress;
 
-    IVotingEscrow public immutable votingEscrow;
+    IVotingEscrow public immutable VOTING_ESCROW;
 
     IVoter public immutable voter;
 
@@ -41,7 +41,7 @@ contract ZodiacToken is ERC20, AccessControl {
     uint256 public immutable expiryCooldownTime;
 
     /// @dev Dex router
-    ISnakeRouter public immutable router;
+    ISnakeRouter public router;
 
     /// @notice The pair contract that provides the current TWAP price to purchase
     /// the underlying token while exercising options (the strike price)
@@ -160,9 +160,12 @@ contract ZodiacToken is ERC20, AccessControl {
 
         underlyingToken = _underlyingToken;
         voter = IVoter(_voter);
+        VOTING_ESCROW = IVotingEscrow(IVoter(_voter).VOTING_ESCROW());
         router = ISnakeRouter(_router);
 
         treasuries.push(TreasuryConfig(_treasury, 5, false));
+
+        expiryCooldownTime = _expiryCooldownTime;
 
         emit AddTreasury(_treasury, 5, false);
         emit SetRouter(_router);
@@ -547,29 +550,38 @@ contract ZodiacToken is ERC20, AccessControl {
     }
 
     function _usePaymentAsGaugeReward(uint256 amount) internal {
-        _safeTransferFrom(paymentToken, msg.sender, address(this), amount);
+        _safeTransferFrom(
+            address(paymentToken),
+            msg.sender,
+            address(this),
+            amount
+        );
         _transferRewardToGauge();
     }
 
     function _transferRewardToGauge() internal {
-        uint256 paymentTokenCollectedAmount = IERC20(paymentToken).balanceOf(
+        uint256 paymentTokenCollectedAmount = paymentToken.balanceOf(
             address(this)
         );
 
         if (rewardsAddress != address(0)) {
             _safeTransfer(
-                paymentToken,
+                address(paymentToken),
                 rewardsAddress,
                 paymentTokenCollectedAmount
             );
         } else {
-            uint256 leftRewards = IGauge(gauge).left(paymentToken);
+            uint256 leftRewards = IGauge(gauge).left(address(paymentToken));
 
             if (paymentTokenCollectedAmount > leftRewards) {
                 // we are sending rewards only if we have more then the current rewards in the gauge
-                _safeApprove(paymentToken, gauge, paymentTokenCollectedAmount);
+                _safeApprove(
+                    address(paymentToken),
+                    address(gauge),
+                    paymentTokenCollectedAmount
+                );
                 IGauge(gauge).notifyRewardAmount(
-                    paymentToken,
+                    address(paymentToken),
                     paymentTokenCollectedAmount
                 );
             }

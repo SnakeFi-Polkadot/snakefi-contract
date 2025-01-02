@@ -40,8 +40,8 @@ contract SnakePair {
     address public immutable token0;
     address public immutable token1;
     address public immutable factory;
-    address public immutable externalBribe;
-    address public immutable voter;
+    address public externalBribe;
+    address public voter;
     bool public hasGauge;
 
     // bool public immutable ;
@@ -52,8 +52,8 @@ contract SnakePair {
 
     Observation[] public observations;
 
-    uint8 internal immutable decimals0;
-    uint8 internal immutable decimals1;
+    uint256 internal immutable decimals0;
+    uint256 internal immutable decimals1;
 
     uint256 public reserve0;
     uint256 public reserve1;
@@ -361,7 +361,7 @@ contract SnakePair {
         (address _token0, address _token1) = (token0, token1);
         uint256 _balance0 = IERC20(_token0).balanceOf(address(this));
         uint256 _balance1 = IERC20(_token1).balanceOf(address(this));
-        uint256 _liquidity = balanceOf(address(this));
+        uint256 _liquidity = balanceOf[address(this)];
 
         uint256 _totalSupply = totalSupply;
         amount0 = (_liquidity * _balance0) / _totalSupply;

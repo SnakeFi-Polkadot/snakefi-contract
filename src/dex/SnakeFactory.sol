@@ -14,26 +14,21 @@ contract SnakeFactory is ISnakeFactory {
     uint256 public stableFee;
     uint256 public volatileFee;
 
-    uint256 public stakingNFTFee;
+    // uint256 public stakingNFTFee;
 
-    bool public isPaused;
+    bool public override isPaused;
     address public pauser;
 
     address public feeSetter;
-    address public override voter;
-
-    address public override stakingFeeHandler; // Staking Fee Handler
-    address public override referrerFeeHandler; // Referral Fee Handler
-
-    bool public initial_staking_fee_handler;
-    bool public initial_referral_fee_handler;
+    address public voter;
 
     address public team; // Team wallet could be multisig or distinct with the deployer
     address public immutable deployer; // This deployer address could be same as the feeSetter
 
     /* ------------------- token0 -> token1 -> snake -> pair ------------------- */
-    mapping(address => mapping(address => mapping(bool => address))) public override getPair;
-    mapping(address => bool) public override isPair;
+    mapping(address => mapping(address => mapping(bool => address)))
+        public getPair;
+    mapping(address => bool) public isPair;
     address[] public allPairs;
 
     /* ------------------------- Track the creation history ------------------------- */
@@ -42,7 +37,13 @@ contract SnakeFactory is ISnakeFactory {
     bool internal _stable;
 
     /* ---------------------------------- EVENT --------------------------------- */
-    event PairCreated(address indexed token0, address indexed token1, bool snake, address pair, uint256);
+    event PairCreated(
+        address indexed token0,
+        address indexed token1,
+        bool snake,
+        address pair,
+        uint256
+    );
 
     constructor() {
         pauser = msg.sender;
@@ -51,22 +52,8 @@ contract SnakeFactory is ISnakeFactory {
         stableFee = 2; // 0.02%
         volatileFee = 20; // 0.2%
         // snakeFee = 20; // 0.2%
-        stakingNFTFee = 1000; // 10% of stable / volatile fee
+        // stakingNFTFee = 1000; // 10% of stable / volatile fee
         deployer = msg.sender;
-    }
-
-    function setStakingFeeHandler(address _stakingFeeHandler) external {
-        require(msg.sender == deployer, "No permission");
-        require(!initial_staking_fee_handler, "Already Initialized");
-        stakingFeeHandler = _stakingFeeHandler;
-        initial_staking_fee_handler = true;
-    }
-
-    function setReferralFeeHandler(address _referrerFeeHandler) external {
-        require(msg.sender == deployer, "No permission");
-        require(!initial_referral_fee_handler, "Already Initialized");
-        referrerFeeHandler = _referrerFeeHandler;
-        initial_referral_fee_handler = true;
     }
 
     function setTeam(address _team) external {
@@ -102,9 +89,15 @@ contract SnakeFactory is ISnakeFactory {
         }
     }
 
-    function createPair(address token0, address token1, bool stable) external override returns (address pair) {
+    function createPair(
+        address token0,
+        address token1,
+        bool stable
+    ) external override returns (address pair) {
         require(token0 != token1, "IA"); // "Pair: IDENTICAL_ADDRESSES"
-        (address tokenA, address tokenB) = token0 < token1 ? (token0, token1) : (token1, token0);
+        (address tokenA, address tokenB) = token0 < token1
+            ? (token0, token1)
+            : (token1, token0);
         require(tokenA != address(0), "ZA"); // "Pair: ZERO_ADDRESS"
         require(getPair[tokenA][tokenB][stable] == address(0), "PE"); // "Pair: Pair Exists"
         bytes32 salt = keccak256(abi.encodePacked(tokenA, tokenB, stable));
@@ -128,7 +121,12 @@ contract SnakeFactory is ISnakeFactory {
         return keccak256(type(SnakePair).creationCode);
     }
 
-    function getInitializable() external view override returns (address, address, bool) {
+    function getInitializable()
+        external
+        view
+        override
+        returns (address, address, bool)
+    {
         return (_token0, _token1, _stable);
     }
 

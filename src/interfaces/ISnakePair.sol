@@ -4,16 +4,40 @@ pragma solidity 0.8.20;
 interface ISnakePair {
     function claimFees() external returns (uint256, uint256);
 
-    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
 
-    function permit(address owner, address spender, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
-        external;
+    function permit(
+        address owner,
+        address spender,
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external;
 
-    function swap(uint256 amount0Out, uint256 amount1Out, address to, bytes calldata data) external;
+    function swap(
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address to,
+        bytes calldata data
+    ) external;
 
     function mint(address receiver) external returns (uint256 lpAmount);
 
-    function burn(address burner) external returns (uint256 amount0, uint256 amount1);
+    function burn(
+        address burner
+    ) external returns (uint256 amount0, uint256 amount1);
+
+    function setHasGauge(uint256, address) external;
+
+    function setExternalBribe(address) external;
+
+    function setVoter(address) external;
 
     /* ----------------------------- VIEW FUNCTIONS ----------------------------- */
     function metadata()
@@ -29,9 +53,9 @@ interface ISnakePair {
             address token1
         );
 
-    // function externalBribe() external view returns(address);
+    function externalBribe() external view returns (address);
 
-    // function voter() external view returns(address);
+    function voter() external view returns (address);
 
     function factory() external view returns (address);
 
@@ -43,7 +67,10 @@ interface ISnakePair {
 
     function tokens() external view returns (address, address);
 
-    function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256 amountOut);
+    function getAmountOut(
+        uint256 amountIn,
+        address tokenIn
+    ) external view returns (uint256 amountOut);
 
     function name() external view returns (string memory);
 
@@ -57,11 +84,22 @@ interface ISnakePair {
 
     function claimable1(address _user) external view returns (uint256);
 
+    function hasGauge() external view returns (bool);
+
     function stable() external view returns (bool);
+
+    function prices(
+        address tokenIn,
+        uint256 amountIn,
+        uint256 points
+    ) external view returns (uint256[] memory);
 
     function balanceOf(address _user) external view returns (uint256);
 
-    function allowance(address _owner, address _spender) external view returns (uint256);
+    function allowance(
+        address _owner,
+        address _spender
+    ) external view returns (uint256);
 
     function getReserves() external view returns (uint256, uint256, uint256);
 }

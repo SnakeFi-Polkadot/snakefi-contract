@@ -4,13 +4,12 @@ pragma solidity 0.8.20;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {FixedPointMathLib} from "@solady/utils/FixedPointMathLib.sol";
 
-import {ISnakeRouter} from "../interfaces/ISnakeRouter.sol";
 import {ISnakeFactory} from "../interfaces/ISnakeFactory.sol";
 import {ISnakePair} from "../interfaces/ISnakePair.sol";
 import {SnakePair} from "./SnakePair.sol";
 import {IWrappedWND} from "../interfaces/IWrappedWND.sol";
 
-contract SnakeRouter is ISnakeRouter {
+contract SnakeRouter {
     using FixedPointMathLib for uint256;
 
     struct Route {
@@ -26,10 +25,10 @@ contract SnakeRouter is ISnakeRouter {
     }
 
     address public immutable factory;
-    
+
     IWrappedWND public immutable wrappedWND;
 
-    uint256 internal constant MINIMUM_LIQUIDITY = 10**3;
+    uint256 internal constant MINIMUM_LIQUIDITY = 10 ** 3;
 
     bytes32 immutable pairCodeHash;
 
@@ -48,13 +47,20 @@ contract SnakeRouter is ISnakeRouter {
         assert(msg.sender == address(wrappedWND)); // only accept WND via fallback from the WrappedWND contract
     }
 
-    function sortToken(address token0, address token1) public view returns (address tokenA, address tokenB) {
+    function sortToken(
+        address token0,
+        address token1
+    ) public view returns (address tokenA, address tokenB) {
         tokenA = token0 < token1 ? token0 : token1;
         tokenB = token0 < token1 ? token1 : token0;
         require(tokenA != address(0), "SnakeRouter: ZERO_ADDRESS");
     }
 
-    function pairFor(address token0, address token1, bool stable) public view override returns (address pair) {
+    function pairFor(
+        address token0,
+        address token1,
+        bool stable
+    ) public view returns (address pair) {
         (address tokenA, address tokenB) = sortToken(token0, token1);
         pair = address(
             uint160(
@@ -76,17 +82,21 @@ contract SnakeRouter is ISnakeRouter {
         address tokenA,
         address tokenB,
         bool stable
-    ) public view returns(uint256 reserveA, uint256 reserveB) {
+    ) public view returns (uint256 reserveA, uint256 reserveB) {
         (address token0, ) = sortToken(tokenA, tokenB);
-        (uint256 reserve0, uint256 reserve1, ) = ISnakePair(pairFor(tokenA, tokenB, stable)).getReserves();
-        (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+        (uint256 reserve0, uint256 reserve1, ) = ISnakePair(
+            pairFor(tokenA, tokenB, stable)
+        ).getReserves();
+        (reserveA, reserveB) = tokenA == token0
+            ? (reserve0, reserve1)
+            : (reserve1, reserve0);
     }
 
     function getAmountOut(
         uint256 amountIn,
         address tokenIn,
         address tokenOut
-    ) public view returns(uint256 amountOut, bool stable) {
+    ) public view returns (uint256 amountOut, bool stable) {
         address pair = pairFor(tokenIn, tokenOut, true);
 
         uint256 amountStable;
@@ -102,7 +112,10 @@ contract SnakeRouter is ISnakeRouter {
             amountVolatile = ISnakePair(pair).getAmountOut(amountIn, tokenIn);
         }
 
-        return amountStable > amountVolatile ? (amountStable, true) : (amountVolatile, false);
+        return
+            amountStable > amountVolatile
+                ? (amountStable, true)
+                : (amountVolatile, false);
     }
 
     function getAmountsOut(
@@ -115,14 +128,21 @@ contract SnakeRouter is ISnakeRouter {
         amounts[0] = amountIn;
 
         for (uint256 i = 0; i < routes.length; i++) {
-            address pair = pairFor(routes[i].token0, routes[i].token1, routes[i].stable);
+            address pair = pairFor(
+                routes[i].token0,
+                routes[i].token1,
+                routes[i].stable
+            );
             if (ISnakeFactory(factory).isPair(pair)) {
-                amounts[i + 1] = ISnakePair(pair).getAmountOut(amounts[i], routes[i].token0);
+                amounts[i + 1] = ISnakePair(pair).getAmountOut(
+                    amounts[i],
+                    routes[i].token0
+                );
             }
         }
     }
 
-    function isPair(address pair) public view returns(bool) {
+    function isPair(address pair) public view returns (bool) {
         return ISnakeFactory(factory).isPair(pair);
     }
 
@@ -132,11 +152,11 @@ contract SnakeRouter is ISnakeRouter {
         bool stable,
         uint256 amountADesired,
         uint256 amountBDesired
-    ) external view returns(
-        uint256 amountA,
-        uint256 amountB,
-        uint256 liquidity
-    ) {
+    )
+        external
+        view
+        returns (uint256 amountA, uint256 amountB, uint256 liquidity)
+    {
         address _pair = ISnakeFactory(factory).getPair(tokenA, tokenB, stable);
         (uint256 reserveA, uint256 reserveB) = (0, 0);
         uint256 _totalSupply = 0;
@@ -149,18 +169,24 @@ contract SnakeRouter is ISnakeRouter {
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
             liquidity = (amountA * amountB).sqrt() - MINIMUM_LIQUIDITY;
-        }
-        else {
-            uint256 amountBOptimal = _quoteLiquidity(amountADesired, reserveA, reserveB);
+        } else {
+            uint256 amountBOptimal = _quoteLiquidity(
+                amountADesired,
+                reserveA,
+                reserveB
+            );
             if (amountBOptimal > amountBDesired) {
-                uint256 amountAOptimal = _quoteLiquidity(amountBDesired, reserveB, reserveA);
+                uint256 amountAOptimal = _quoteLiquidity(
+                    amountBDesired,
+                    reserveB,
+                    reserveA
+                );
                 (amountA, amountB) = (amountAOptimal, amountBOptimal);
                 liquidity = FixedPointMathLib.min(
                     (amountA * _totalSupply) / reserveA,
                     (amountB * _totalSupply) / reserveB
                 );
-            }
-            else {
+            } else {
                 (amountA, amountB) = (amountADesired, amountBDesired);
                 liquidity = FixedPointMathLib.min(
                     (amountA * _totalSupply) / reserveA,
@@ -175,13 +201,17 @@ contract SnakeRouter is ISnakeRouter {
         address tokenB,
         bool stable,
         uint256 liquidity
-    ) external view returns(uint256 amountA, uint256 amountB) {
+    ) external view returns (uint256 amountA, uint256 amountB) {
         address _pair = ISnakeFactory(factory).getPair(tokenA, tokenB, stable);
         if (_pair == address(0)) {
             return (0, 0);
         }
 
-        (uint256 reserveA, uint256 reserveB) = getReserves(tokenA, tokenB, stable);
+        (uint256 reserveA, uint256 reserveB) = getReserves(
+            tokenA,
+            tokenB,
+            stable
+        );
 
         uint256 _totalSupply = ISnakePair(_pair).totalSupply();
 
@@ -203,13 +233,21 @@ contract SnakeRouter is ISnakeRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external ensure(deadline) returns(
-        uint256 amountA,
-        uint256 amountB,
-        uint256 liquidity
-    ) {
-        (amountA, amountB) = _addLiquidity(tokenA, tokenB, stable, amountADesired, amountBDesired, amountAMin, amountBMin);
-    
+    )
+        external
+        ensure(deadline)
+        returns (uint256 amountA, uint256 amountB, uint256 liquidity)
+    {
+        (amountA, amountB) = _addLiquidity(
+            tokenA,
+            tokenB,
+            stable,
+            amountADesired,
+            amountBDesired,
+            amountAMin,
+            amountBMin
+        );
+
         address pair = pairFor(tokenA, tokenB, stable);
         _safeTransferFrom(tokenA, msg.sender, to, amountA);
         _safeTransferFrom(tokenB, msg.sender, to, amountB);
@@ -224,18 +262,19 @@ contract SnakeRouter is ISnakeRouter {
         uint256 amountWNDMin,
         address to,
         uint256 deadline
-    ) external ensure(deadline) payable returns(
-        uint256 amountToken,
-        uint256 amountWND,
-        uint256 liquidity
-    ) {
+    )
+        external
+        payable
+        ensure(deadline)
+        returns (uint256 amountToken, uint256 amountWND, uint256 liquidity)
+    {
         (amountToken, amountWND) = _addLiquidity(
-            token, 
-            address(wrappedWND), 
-            stable, 
-            amountTokenDesired, 
+            token,
+            address(wrappedWND),
+            stable,
+            amountTokenDesired,
             msg.value,
-            amountTokenMin, 
+            amountTokenMin,
             amountWNDMin
         );
 
@@ -263,12 +302,14 @@ contract SnakeRouter is ISnakeRouter {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) public ensure(deadline) returns(uint256 amountA, uint256 amountB) {
+    ) public ensure(deadline) returns (uint256 amountA, uint256 amountB) {
         address pair = pairFor(tokenA, tokenB, stable);
         require(ISnakePair(pair).transferFrom(msg.sender, pair, liquidity));
         (uint256 amount0, uint256 amount1) = ISnakePair(pair).burn(to);
         (address token0, ) = sortToken(tokenA, tokenB);
-        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+        (amountA, amountB) = tokenA == token0
+            ? (amount0, amount1)
+            : (amount1, amount0);
 
         // Slippage check
         require(amountA >= amountAMin, "SnakeRouter: INSUFFICIENT_A_AMOUNT");
@@ -283,15 +324,24 @@ contract SnakeRouter is ISnakeRouter {
         uint256 amountWNDMin,
         address to,
         uint256 deadline
-    ) public ensure(deadline) returns(uint256 amountToken, uint256 amountWND) {
-        (amountToken, amountWND) = removeLiquidity(token, address(wrappedWND), stable, liquidity, amountTokenMin, amountWNDMin, to, deadline);
+    ) public ensure(deadline) returns (uint256 amountToken, uint256 amountWND) {
+        (amountToken, amountWND) = removeLiquidity(
+            token,
+            address(wrappedWND),
+            stable,
+            liquidity,
+            amountTokenMin,
+            amountWNDMin,
+            to,
+            deadline
+        );
         _safeTransfer(token, to, amountToken);
         wrappedWND.withdraw(amountWND);
         _safeTransferWND(to, amountWND);
     }
 
     function removeLiquidityWithPermit(
-        address tokenA, 
+        address tokenA,
         address tokenB,
         bool stable,
         uint256 liquidity,
@@ -301,21 +351,30 @@ contract SnakeRouter is ISnakeRouter {
         uint256 deadline,
         bool approveMax,
         TransactionSignature memory signature
-    ) external returns(uint256 amountA, uint256 amountB) {
+    ) external returns (uint256 amountA, uint256 amountB) {
         address pair = pairFor(tokenA, tokenB, stable);
         {
             uint256 value = approveMax ? type(uint256).max : liquidity;
             ISnakePair(pair).permit(
-                msg.sender, 
-                address(this), 
-                value, 
-                deadline, 
-                signature.v, 
-                signature.r, 
+                msg.sender,
+                address(this),
+                value,
+                deadline,
+                signature.v,
+                signature.r,
                 signature.s
             );
         }
-        (amountA, amountB) = removeLiquidity(tokenA, tokenB, stable, liquidity, amountAMin, amountBMin, to, deadline);
+        (amountA, amountB) = removeLiquidity(
+            tokenA,
+            tokenB,
+            stable,
+            liquidity,
+            amountAMin,
+            amountBMin,
+            to,
+            deadline
+        );
     }
 
     function removeLiquidityWNDWithPermit(
@@ -328,21 +387,32 @@ contract SnakeRouter is ISnakeRouter {
         uint256 deadline,
         bool approveMax,
         TransactionSignature memory signature
-    ) external ensure(deadline) returns(uint256, uint256) {
+    ) external ensure(deadline) returns (uint256, uint256) {
         uint256 value = approveMax ? type(uint256).max : liquidity;
-        ISnakePair(
-            pairFor(
+        ISnakePair(pairFor(token, address(wrappedWND), stable)).permit(
+            msg.sender,
+            address(this),
+            value,
+            deadline,
+            signature.v,
+            signature.r,
+            signature.s
+        );
+        return
+            removeLiquidityWND(
                 token,
-                address(wrappedWND), 
-                stable
-            )
-        ).permit(msg.sender, address(this), value, deadline, signature.v, signature.r, signature.s);
-        return removeLiquidityWND(token, stable, liquidity, amountTokenMin, amountWNDMin, to, deadline);
+                stable,
+                liquidity,
+                amountTokenMin,
+                amountWNDMin,
+                to,
+                deadline
+            );
     }
 
     /* -------------------------------------------------------------------------- */
     /*                                    SWAP                                    */
-    /* -------------------------------------------------------------------------- */    
+    /* -------------------------------------------------------------------------- */
 
     function swapExactTokensForTokensSimple(
         uint256 amountIn,
@@ -352,7 +422,7 @@ contract SnakeRouter is ISnakeRouter {
         bool stable,
         address to,
         uint256 deadline
-    ) external ensure(deadline) returns(uint256[] memory amounts) {
+    ) external ensure(deadline) returns (uint256[] memory amounts) {
         Route[] memory routes = new Route[](1);
         routes[0].token0 = tokenFrom;
         routes[0].token1 = tokenTo;
@@ -363,9 +433,9 @@ contract SnakeRouter is ISnakeRouter {
             "SnakeRouter: INSUFFICIENT_OUTPUT_AMOUNT"
         );
         _safeTransferFrom(
-            routes[0].token0, 
-            msg.sender, 
-            pairFor(routes[0].token0, routes[0].token1, routes[0].stable), 
+            routes[0].token0,
+            msg.sender,
+            pairFor(routes[0].token0, routes[0].token1, routes[0].stable),
             amounts[0]
         );
         _swap(amounts, routes, to);
@@ -377,16 +447,16 @@ contract SnakeRouter is ISnakeRouter {
         Route[] memory routes,
         address to,
         uint256 deadline
-    ) external ensure(deadline) returns(uint256[] memory amounts) {
+    ) external ensure(deadline) returns (uint256[] memory amounts) {
         amounts = getAmountsOut(amountIn, routes);
         require(
             amounts[amounts.length - 1] >= amountOutIn,
             "SnakeRouter: INSUFFICIENT_OUTPUT_AMOUNT"
         );
         _safeTransferFrom(
-            routes[0].token0, 
-            msg.sender, 
-            pairFor(routes[0].token0, routes[0].token1, routes[0].stable), 
+            routes[0].token0,
+            msg.sender,
+            pairFor(routes[0].token0, routes[0].token1, routes[0].stable),
             amounts[0]
         );
         _swap(amounts, routes, to);
@@ -397,8 +467,11 @@ contract SnakeRouter is ISnakeRouter {
         Route[] calldata routes,
         address to,
         uint256 deadline
-    ) external payable ensure(deadline) returns(uint256[] memory amounts) {
-        require(routes[0].token0 == address(wrappedWND), "SnakeRouter: INVALID_PATH");
+    ) external payable ensure(deadline) returns (uint256[] memory amounts) {
+        require(
+            routes[0].token0 == address(wrappedWND),
+            "SnakeRouter: INVALID_PATH"
+        );
         amounts = getAmountsOut(msg.value, routes);
         require(
             amounts[amounts.length - 1] >= amountOutMin,
@@ -407,7 +480,7 @@ contract SnakeRouter is ISnakeRouter {
         wrappedWND.deposit{value: amounts[0]}();
         assert(
             wrappedWND.transfer(
-                pairFor(routes[0].token0, routes[0].token1, routes[0].stable), 
+                pairFor(routes[0].token0, routes[0].token1, routes[0].stable),
                 amounts[0]
             )
         );
@@ -465,21 +538,24 @@ contract SnakeRouter is ISnakeRouter {
         uint256 amountA,
         uint256 reserveA,
         uint256 reserveB
-    ) internal pure returns(uint256 amountB) {
+    ) internal pure returns (uint256 amountB) {
         require(amountA > 0, "SnakeRouter: INSUFFICIENT_AMOUNT");
-        require(reserveA > 0 && reserveB > 0, "SnakeRouter: INSUFFICIENT_LIQUIDITY");
-        amountB = amountA * reserveB / reserveA;
+        require(
+            reserveA > 0 && reserveB > 0,
+            "SnakeRouter: INSUFFICIENT_LIQUIDITY"
+        );
+        amountB = (amountA * reserveB) / reserveA;
     }
 
     function _addLiquidity(
-        address tokenA, 
+        address tokenA,
         address tokenB,
         bool stable,
         uint256 amountADesired,
         uint256 amountBDesired,
         uint256 amountAMin,
         uint256 amountBMin
-    ) internal returns(uint256 amountA, uint256 amountB) {
+    ) internal returns (uint256 amountA, uint256 amountB) {
         require(amountADesired >= amountAMin);
         require(amountBDesired >= amountBMin);
 
@@ -488,41 +564,49 @@ contract SnakeRouter is ISnakeRouter {
             _pair = ISnakeFactory(factory).createPair(tokenA, tokenB, stable);
         }
 
-        (uint256 reserveA, uint256 reserveB) = getReserves(tokenA, tokenB, stable);
+        (uint256 reserveA, uint256 reserveB) = getReserves(
+            tokenA,
+            tokenB,
+            stable
+        );
 
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
-        }
-        else {
-            uint256 amountBOptimal = _quoteLiquidity(amountADesired, reserveA, reserveB);
+        } else {
+            uint256 amountBOptimal = _quoteLiquidity(
+                amountADesired,
+                reserveA,
+                reserveB
+            );
             if (amountBOptimal > amountBDesired) {
-                uint256 amountAOptimal = _quoteLiquidity(amountBDesired, reserveB, reserveA);
+                uint256 amountAOptimal = _quoteLiquidity(
+                    amountBDesired,
+                    reserveB,
+                    reserveA
+                );
                 assert(amountAOptimal <= amountADesired);
                 // Slippage check
-                require(amountAOptimal >= amountAMin, "SnakeRouter: INSUFFICIENT_A_AMOUNT");
+                require(
+                    amountAOptimal >= amountAMin,
+                    "SnakeRouter: INSUFFICIENT_A_AMOUNT"
+                );
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
-            }
-            else {
+            } else {
                 // Slippage check
-                require(amountBOptimal >= amountBMin, "SnakeRouter: INSUFFICIENT_B_AMOUNT");
+                require(
+                    amountBOptimal >= amountBMin,
+                    "SnakeRouter: INSUFFICIENT_B_AMOUNT"
+                );
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             }
         }
     }
 
-    function _safeTransfer(
-        address token,
-        address to,
-        uint256 amount
-    ) internal {
+    function _safeTransfer(address token, address to, uint256 amount) internal {
         require(token.code.length > 0);
 
         (bool success, bytes memory data) = token.call(
-            abi.encodeWithSelector(
-                IERC20.transfer.selector,
-                to,
-                amount
-            )
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
         );
         require(success && (data.length == 0 || abi.decode(data, (bool))));
     }
@@ -539,17 +623,14 @@ contract SnakeRouter is ISnakeRouter {
             abi.encodeWithSelector(
                 IERC20.transferFrom.selector,
                 from,
-                to, 
+                to,
                 amount
             )
         );
         require(success && (data.length == 0 || abi.decode(data, (bool))));
     }
 
-    function _safeTransferWND(
-        address to,
-        uint256 amount
-    ) internal {
+    function _safeTransferWND(address to, uint256 amount) internal {
         (bool success, ) = to.call{value: amount}(new bytes(0));
         require(success, "WND_TRANSFER_FAILED");
     }
@@ -560,22 +641,22 @@ contract SnakeRouter is ISnakeRouter {
         address _to
     ) internal virtual {
         for (uint256 i = 0; i < routes.length; i++) {
-            (address token0,) = sortToken(routes[i].token0, routes[i].token1);
-            uint256 amountOut = amounts[i+1];
-            (uint256 amount0Out, uint256 amount1Out) = routes[i].token0 == token0 ? (uint256(0), amountOut) : (amountOut, uint256(0));
-            address to = i < routes.length - 1 
+            (address token0, ) = sortToken(routes[i].token0, routes[i].token1);
+            uint256 amountOut = amounts[i + 1];
+            (uint256 amount0Out, uint256 amount1Out) = routes[i].token0 ==
+                token0
+                ? (uint256(0), amountOut)
+                : (amountOut, uint256(0));
+            address to = i < routes.length - 1
                 ? pairFor(
                     routes[i + 1].token0,
                     routes[i + 1].token1,
                     routes[i + 1].stable
                 )
                 : _to;
-            ISnakePair(pairFor(routes[i].token0, routes[i].token0, routes[i].stable)).swap(
-                amount0Out,
-                amount1Out,
-                to,
-                new bytes(0)
-            );
+            ISnakePair(
+                pairFor(routes[i].token0, routes[i].token0, routes[i].stable)
+            ).swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
 }
